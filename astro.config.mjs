@@ -35,8 +35,6 @@ export default defineConfig({
   site: 'https://fuwari.vercel.app/',
   base: '/',
   trailingSlash: 'always',
-  output: 'hybrid',
-  adapter: cloudflare(),
   integrations: [
     tailwind(),
     swup({
