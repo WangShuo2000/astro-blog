@@ -6,6 +6,7 @@ import Compress from 'astro-compress'
 import icon from 'astro-icon'
 import { defineConfig } from 'astro/config'
 import Color from 'colorjs.io'
+import mdx from '@astrojs/mdx';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings'
 import rehypeComponents from 'rehype-components' /* Render the custom directive content */
 import rehypeKatex from 'rehype-katex'
@@ -60,6 +61,7 @@ export default defineConfig({
     }),
     svelte(),
     sitemap(),
+    mdx(),
     Compress({
       CSS: false,
       Image: false,

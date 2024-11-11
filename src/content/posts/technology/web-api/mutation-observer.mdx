@@ -1,0 +1,197 @@
+---
+title: Mutation Observer
+published: 2023-05-22
+description: 'An introduction to Mutation Observer in the web api'
+tags: ['Javascript', 'Web api']
+category: Technology
+draft: false
+---
+
+import { Image } from 'astro:assets';
+import addChild from '@/assets/web-api/mutation/add-child.png';
+import attributes from '@/assets/web-api/mutation/attributes.png';
+import changeColor from '@/assets/web-api/mutation/change-color.png';
+import mutation from '@/assets/web-api/mutation/mutation.png';
+import style from '@/assets/web-api/mutation/style.png';
+import subtree from '@/assets/web-api/mutation/subtree.png';
+
+## 介绍
+
+MDN 给出的介绍是： MutationObserver 接口提供了监视对 DOM 树所做更改的能力。
+它被设计为旧的 Mutation Events 功能的替代品，该功能是 DOM3 Events 规范的一部分
+
+## 构造函数
+
+`MutationObserver()`
+
+MutationObserver() 构造函数会创建并返回一个新的观察器，会在触发指定 DOM 事件时，调用指定的回调函数。
+但是 MutationObserver 对 DOM 的观察不会立即启动，必须先调用 observe() 方法来确定，要监听哪一部分的 DOM 以及要响应哪些更改。
+
+```javascript
+const callback = () => {}
+
+const observer = new MutationObserver(callback);
+
+回调函数接收两个参数
+args1: 描述所有被触发改动的 MutationRecord 对象数组
+args2: 调用该函数的 MutationObserver 对象
+
+返回值
+return: 包含监听 DOM 变化回调函数的 MutationObserver 对象
+```
+
+## 方法
+
+`observe`
+
+observe() 方法配置了 MutationObserver 对象的回调方法以开始接收与给定选项匹配的 DOM 变化的通知。
+根据配置，观察者会观察 DOM 树中的单个 Node，也可能会观察被指定节点的部分或者所有的子孙节点,
+配置的 childList、attributes 和 characterData 中，<span className="text-red-500">必须有一个参数为 true</span>
+
+```javascript
+mutationObserver.observe(target, ...options)
+
+subtree?: 监听以 target 为根节点的整个子树
+childList?: 监听 target 节点中发生的节点的新增与删除
+attributes?: 观察所有监听的节点属性值的变化
+attributeFilter?: 声明哪些属性名会被监听的数组
+attributeOldValue?: 记录上一次被监听的节点的属性变化
+characterData?: 监听声明的 target 节点上所有字符的变化
+characterDataOldValue?: 记录前一个被监听的节点中发生的文本变化
+```
+
+`disconnect`
+
+disconnect() 方法告诉观察者停止观察变动。可以通过调用其 observe() 方法来重用观察者，
+注意：**如果被观察的元素被从 DOM 中移除，然后被浏览器的垃圾回收机制释放，此 MutationObserver 将同样被删除**
+
+```javascript
+mutationObserver.disconnect()
+```
+
+`takeRecords`
+
+takeRecords() 方法返回已检测到但尚未由观察者的回调函数处理的所有匹配 DOM 更改的列表，使变更队列保持为空,
+最常见的使用场景是在断开观察者之前立即获取所有未处理的更改记录，以便在停止观察者时可以处理任何未处理的更改
+
+```javascript
+mutationRecords = mutationObserver.takeRecords()
+```
+
+```javascript
+//抓取了所有未处理的变更记录，然后调用回调，并将变更记录列表传递给回调，
+//以保证所有变更记录都被处理。在调用 disconnect() 之前完成以便停止观察 DOM
+const mutations = observer.takeRecords()
+
+if (mutations) {
+  callback(mutations)
+}
+
+observer.disconnect()
+```
+
+## 示例
+
+```html
+<div style="background-color: bisque;width: 100px; height: 70px;" class="mutation-container">
+  <ul class="ul">
+    <li>1</li>
+    <li>2</li>
+  </ul>
+</div>
+```
+
+样式：
+
+<Image src={style} width={150} height={100} alt="style" />
+
+```javascript
+const div = document.querySelector('.mutation-container')
+const ul = document.querySelector('.ul')
+
+const observerOptions = {
+  childList: true, // 观察目标子节点的变化，是否有添加或者删除
+  attributes: true, // 观察属性变动
+  subtree: true, // 观察后代节点，默认为 false
+}
+
+function callback(mutationList, observer) {
+  mutationList.forEach((mutation) => {
+    switch (mutation.type) {
+      case 'childList':
+        /* 从树上添加或移除一个或更多的子节点；参见 mutation.addedNodes 与
+                mutation.removedNodes */
+        console.log('更改子节点')
+        break
+      case 'attributes':
+        /* mutation.target 中某节点的一个属性值被更改；该属性名称在 mutation.attributeName 中，
+                该属性之前的值为 mutation.oldValue */
+        console.log('节点的属性更改')
+        break
+    }
+  })
+}
+
+const observer = new MutationObserver(callback)
+observer.observe(div, observerOptions)
+```
+
+mutation 结构
+
+<Image src={mutation} width={500} height={230} alt="mutation" />
+
+`测试修改目标dom属性`
+
+```javascript
+div.style.backgroundColor = 'aqua'
+```
+
+结果
+
+<div>
+  <Image src={changeColor} width={150} height={100} alt="result" />
+</div>
+控制台打印
+<div>
+  <Image src={attributes} width={300} height={40} alt="console" />
+</div>
+
+`测试修改子节点`
+
+```javascript
+const li = document.createElement('li')
+li.textContent = '3'
+ul.appendChild(li)
+```
+
+结果
+
+<div>
+  <Image src={addChild} width={150} height={100} alt="result" />
+</div>
+控制台打印
+<div>
+  <Image src={subtree} width={300} height={30} alt="console" />
+</div>
+
+## useMutationObserver
+
+VueUse 库中有对应的 hook 可以直接使用 https://vueuse.org/core/useMutationObserver/#usemutationobserver ，
+
+```javascript
+const el = ref(null)
+
+useMutationObserver(el, (mutations) => {
+    mutations.forEach(item => {
+        ...
+    })
+}, {
+    attributes: true,
+})
+```
+
+## 更多的应用场景
+
+1. 监听表单元素的值变化，方便实时获取用户输入数据；
+1. 监听列表元素变化，实现自动加载更多；
+1. 监听页面中组件的变化，方便实现数据驱动的组件更新。
