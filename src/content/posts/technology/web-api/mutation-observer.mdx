@@ -103,7 +103,7 @@ observer.disconnect()
 
 样式：
 
-<Image src={style} width={150} height={100} alt="style" />
+<Image src={style} width={'50%'} height={100} alt="style" quality="high" />
 
 ```javascript
 const div = document.querySelector('.mutation-container')
@@ -138,7 +138,7 @@ observer.observe(div, observerOptions)
 
 mutation 结构
 
-<Image src={mutation} width={500} height={230} alt="mutation" />
+<Image src={mutation} width={'50%'} height={230} alt="mutation" quality="high" />
 
 `测试修改目标dom属性`
 
@@ -149,11 +149,11 @@ div.style.backgroundColor = 'aqua'
 结果
 
 <div>
-  <Image src={changeColor} width={150} height={100} alt="result" />
+  <Image src={changeColor} width={'50%'} height={100} alt="result" quality="high" />
 </div>
 控制台打印
 <div>
-  <Image src={attributes} width={300} height={40} alt="console" />
+  <Image src={attributes} width={'50%'} height={40} alt="console" quality="high" />
 </div>
 
 `测试修改子节点`
@@ -167,11 +167,11 @@ ul.appendChild(li)
 结果
 
 <div>
-  <Image src={addChild} width={150} height={100} alt="result" />
+  <Image src={addChild} width={'50%'} height={100} alt="result" quality="high" />
 </div>
 控制台打印
 <div>
-  <Image src={subtree} width={300} height={30} alt="console" />
+  <Image src={subtree} width={'50%'} height={30} alt="console" quality="high" />
 </div>
 
 ## useMutationObserver
