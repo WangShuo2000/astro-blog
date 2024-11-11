@@ -6,6 +6,7 @@ import Compress from 'astro-compress'
 import icon from 'astro-icon'
 import { defineConfig } from 'astro/config'
 import Color from 'colorjs.io'
+import cloudflare from '@astrojs/cloudflare'
 import rehypeAutolinkHeadings from 'rehype-autolink-headings'
 import rehypeComponents from 'rehype-components' /* Render the custom directive content */
 import rehypeKatex from 'rehype-katex'
@@ -34,6 +35,8 @@ export default defineConfig({
   site: 'https://fuwari.vercel.app/',
   base: '/',
   trailingSlash: 'always',
+  output: 'hybrid',
+  adapter: cloudflare(),
   integrations: [
     tailwind(),
     swup({
