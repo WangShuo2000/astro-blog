@@ -1,0 +1,33 @@
+---
+title: Why I Moved from Vercel to Cloudflare
+published: 2024-11-17
+description: 'Discover why I decided to migrate my blog from Vercel to Cloudflare.'
+tags: ['Cloudflare']
+category: Tool
+draft: false
+---
+
+import { Image } from 'astro:assets';
+import AI from '@/assets/tool/migrate/langueAI.png'
+
+Thank you for your reading, this is my first time to write blog in English.
+
+# Background
+About a year ago, I discovered Vercel, a platform that seemed both convenient and, at times, frustrating. I decided to build my first blog project there, and initially, I thought it was excellent. I updated my blog posts regularly and everything was running smoothly.
+
+However, after several months without updating or pushing any changes to the project, I noticed that Vercel had updated its platform quite rapidly. Unfortunately, I didn’t keep up with those updates. When I finally decided to update one of my articles and rebuild the project, I ran into issues.
+
+The build logs on Vercel showed that some of the dependencies were incompatible. It suggested commands like `pnpm install --force` or `pnpm install -xxxxx`, but here’s the problem: I hadn’t changed or updated any dependencies in months. This issue bothered me for about a week as I tried to troubleshoot.
+
+Eventually, I realized that Vercel had updated to version 13.x (or higher) so maybe some settings were changed. I read the official archive, updated the platform and reinstalled my dependencies, but the problem persisted, wasting even more of my time. In the end, I became frustrated and gave up on posting new articles, partly due to my work schedule and the complexity of the issues I faced.
+
+# Cloudflare
+As time went by, I explored more platforms for building projects, such as Netlify, Cloudflare, and others. In my free time, I came up with an idea to refactor my blog for a better UI and improved user experience. That’s when I thought, “Why not switch platforms and try something new?” While Vercel is excellent for Next.js and React projects, my new blog doesn’t require the complexity of Next.js. Since it’s just a collection of static articles, speed and simplicity are my top priorities. This opened up a range of options beyond Vercel.
+
+Naturally, I compared several mainstream platforms and found Cloudflare particularly impressive. It offers lower costs and a wealth of features, allowing me to manage project pages, serverless functions, a database, domains, and object caching all in one place. That level of integration is both amazing and incredibly convenient! With that in mind, I decided to use Cloudflare to host my blog, and I chose Astro as the framework for its static output capabilities.
+
+The good news is that my project is about 80% complete. I’m excited to share more details in my blog in the future!
+
+# Now
+Recently, I completed a project called LangueAI, an AI-powered free translation tool. Naturally, I chose to host it on Cloudflare and even worked on improving its SEO, so you can now find it on Google! In my upcoming posts, I’ll share my experience of building this project. Feel free to try it out, and I’d greatly appreciate any feedback or suggestions you have!
+<Image src={AI} quality="high" alt="LangueAI" />
