@@ -4,6 +4,7 @@ import Navbar from '@components/Navbar.astro'
 import BackToTop from '@components/control/BackToTop.astro'
 import SideBar from '@components/widget/SideBar.astro'
 import Layout from './Layout.astro'
+import PostComments from '@components/PostComments.astro'
 import { Icon } from 'astro-icon/components'
 import { siteConfig } from '../config'
 import type { MarkdownHeading } from 'astro'
@@ -74,6 +75,7 @@ const mainPanelTop = siteConfig.banner.enable ? `calc(${BANNER_HEIGHT}vh - ${MAI
                     <!-- the overflow-hidden here prevent long text break the layout-->
                     <!-- make id different from windows.swup global property -->
                     <slot></slot>
+                    <PostComments />
                     <div class="footer col-span-2 onload-animation hidden lg:block">
                         <Footer></Footer>
                     </div>
