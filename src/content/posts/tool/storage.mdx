@@ -1,0 +1,370 @@
+---
+title: Use cloudflare worker and r2 to build image hosting
+published: 2024-12-01
+description: 'Introduce how to build a image hosting by cloudflare worker, r2 and pages.'
+tags: ['Cloudflare']
+category: Tool
+draft: false
+---
+
+import { Image } from 'astro:assets';
+
+An image hosting service, often referred to as an image bed, is a platform designed to store and manage images online. Instead of relying on local storage or embedding images directly into your website, these services provide a centralized repository for your visuals. The primary purpose of an image hosting service is to ensure your images are easily accessible, efficiently delivered, and well-optimized for various use cases.
+
+Using an image hosting service offers several advantages. It reduces the load on your server, ensuring faster page load times and an overall better user experience. Additionally, many platforms provide automatic optimization, resizing, and support for modern formats like WebP, which can significantly improve performance. With features like secure backups, sharing capabilities, and seamless integration with websites and apps, image hosting services are an essential tool for modern web development and content creation.
+
+I will introduce how to build a image hosting platform for your own use (including front-end and back-end)
+
+At first, let's generate a cloudflare worker
+```javascript
+pnpm create cloudflare@latest r2-worker
+```
+```javascript
+- For What would you like to start with?, choose `Hello World example`.
+- For Which template would you like to use?, choose `Hello World Worker`.
+- For Which language do you want to use?, choose `JavaScript`.
+- For Do you want to use git for version control?, choose `Yes`.
+- For Do you want to deploy your application?, choose `No` (we will be making some changes before deploying).
+```
+```javascript
+cd r2-worker
+```
+```javascript
+npx wrangler r2 bucket create test-bucket
+```
+```javascript
+npx wrangler r2 bucket list (to check created success)
+```
+```javascript
+add wrangler.toml 
+```
+edit wrangler.toml
+```javascript
+[[r2_buckets]]
+binding = 'my-bucket' # <~ valid JavaScript variable name
+bucket_name = 'test-bucket'
+```
+edit index.js
+```javascript
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    const key = url.pathname.slice(1);
+	const origin = request.headers.get('Origin');
+
+    switch (request.method) {
+      case "PUT":
+        const formData = await request.formData();
+        const file = formData.get('file');
+        await env['my-bucket'].put(key, file);
+        return new Response(`Put ${key} successfully!`, {
+          headers: {
+            'Access-Control-Allow-Origin': origin,
+          },
+        });
+      case "GET":
+        const objects = await env['my-bucket'].list({ prefix: key, limit: 50 });
+
+        if (objects === null) {
+          return new Response("Object Not Found", { status: 404 });
+        }
+
+        const response = objects.objects.map(item => `https://xxxx(your r2 domain)/${item.key}`)
+
+        return new Response(JSON.stringify(response), {
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': "https://storage.consve.com",
+          }
+        });
+      case "DELETE":
+        await env['my-bucket'].delete(key);
+        return new Response("Deleted!");
+      case "OPTIONS":
+        return new Response(null, {
+          status: 204,
+          headers: {
+            'Access-Control-Allow-Origin': origin,
+            'Access-Control-Allow-Credentials': 'true',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Api-Key',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, PUT',
+            'Access-Control-Max-Age': '86400',
+          }
+        });
+
+      default:
+          return new Response("Method Not Allowed", {
+            status: 405,
+            headers: {
+              Allow: "PUT, GET, DELETE",
+            },
+          });
+      }
+  },
+};
+```
+```javascript
+npx wrangler deploy
+```
+
+Secondly, let’s build a frontend project. For this, I have chosen React, Tailwind CSS, and Vite as the core technologies. Additionally, we’ll use the pnpm CLI to create and manage the project efficiently.
+```javascript
+pnpm create vite upload-image --template react-ts
+```
+```javascript
+pnpm add tailwindcss -D
+```
+```javascript
+npx tailwindcss init
+```
+add content tailwind.config.js
+```javascript
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+}
+```
+add apply in App.css
+```css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+```
+```javascript
+pnpm add autoprefixer postcss -D
+```
+add postcss.config.js file and edit
+```javascript
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {}
+  }
+}
+```
+So far, we’ve prepared everything we need. Now, let’s start building the page.
+To simplify the process, we’ll divide it into distinct sections, each with its specific functionality.
+
+For now, I want the page to include two components:
+	1.	An input field to enter a unique key.
+	2.	An upload image feature.
+
+Let’s begin with the first step: creating the input field for the key (this part is straightforward).
+jsx part
+```jsx
+<div className="flex justify-center items-center min-h-screen bg-gray-100">
+  <div className="p-6 bg-white rounded-lg shadow-lg w-full max-w-lg">
+    <h2 className="text-2xl font-semibold text-center mb-4">Please enter the personal storage name.</h2>
+
+    {/* input key */}
+    <input
+      type="text"
+      value={inputValue}
+      onChange={handleInputChange}
+      className="w-full p-2 border border-gray-300 rounded-md mb-4"
+      placeholder="please input name"
+    />
+
+    {/* next button */}
+    <button
+      onClick={handleNextStep}
+      disabled={!isNextStepEnabled}  // Enable or disable a button based on the content of an input box
+      className={`w-full p-2 rounded-md text-white ${
+        isNextStepEnabled
+          ? "bg-blue-500 hover:bg-blue-700"
+          : "bg-gray-400 cursor-not-allowed"
+      }`}
+    >
+      Next step
+    </button>
+  </div>
+</div>
+```
+js logic part
+```javascript
+const [inputValue, setInputValue] = useState("");
+const [isNextStepEnabled, setIsNextStepEnabled] = useState(false);
+const [storageKey, setStorageKey] = useState(localStorage.getItem('your-key')!);
+
+const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const value = e.target.value;
+  setInputValue(value);
+  // 如果输入框内容不为空，则启用按钮
+  setIsNextStepEnabled(value.trim() !== "");
+};
+
+const handleNextStep = () => {
+  toast.success('Success')
+  localStorage.setItem('your-key', inputValue)
+  setStorageKey(inputValue)
+};
+```
+Ok, now let's write image uploader
+jsx part
+```jsx
+<div className="max-w-4xl mx-auto p-6">
+  <div className="mb-8">
+    <h1 className="text-3xl font-bold mb-4">Image Hosting Platform</h1>
+    <p className="text-gray-600">Upload and manage your images using Cloudflare R2 storage</p>
+  </div>
+
+  {/* Upload Section */}
+  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 mb-8 text-center">
+    <input
+      type="file"
+      accept="image/*"
+      multiple
+      onChange={handleUpload}
+      className="hidden"
+      id="file-upload"
+    />
+    <label
+      htmlFor="file-upload"
+      className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-700 transition-colors"
+    >
+      <Upload size={20} />
+      Select Images
+    </label>
+    <p className="mt-2 text-sm text-gray-500">Supports: JPG, PNG, GIF (Max: 10MB)</p>
+  </div>
+
+  {/* Loading State */}
+  {uploading && (
+    <div className="text-center mb-4">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+      <p className="mt-2">Uploading...</p>
+    </div>
+  )}
+
+  {/* Get data loading */}
+  {loading && (
+    <div className="text-center mb-4">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+      <p className="mt-2">Loading...</p>
+    </div>
+  )}
+
+  {/* Image Gallery */}
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    {links.map((url, index) => (
+      <div key={index} className="border rounded-lg overflow-hidden">
+        <img
+          src={url}
+          alt="image"
+          className="w-full h-48 object-cover"
+        />
+        <div className="p-4">
+          <button
+            onClick={() => {
+              setCurrentIndex(index)
+              copyToClipboard(url)
+            }}
+            className="w-full px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
+          >
+            {copied && currentIndex === index ? 'Copied!' : 'Copy URL'}
+          </button>
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
+```
+js logic part
+```javascript
+const [uploading, setUploading] = useState<boolean>(false);
+const [copied, setCopied] = useState<boolean>(false);
+const [links, setLinks] = useState([]);
+const [currentIndex, setCurrentIndex] = useState(-1);
+const [loading, setLoading] = useState(false);
+
+const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  if (!event.target.files) return;
+
+  const selectedFiles = Array.from(event.target.files);
+  setUploading(true);
+
+  try {
+    const uploadPromises = selectedFiles.map(async (file) => {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const API_BASE = import.meta.env.PROD ? import.meta.env.VITE_API_BASE_URL : '/api'
+      const response = await fetch(`${API_BASE}/${storageKey}/${Date.now()}`, {
+        method: 'PUT',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+    });
+
+    await Promise.all(uploadPromises);
+    getData();
+  } finally {
+    setUploading(false);
+  }
+};
+
+const copyToClipboard = (url: string) => {
+  navigator.clipboard.writeText(url);
+  setCopied(true);
+  setTimeout(() => setCopied(false), 2000);
+};
+
+const getData = async () => {
+  if (!storageKey) {
+    return;
+  }
+  setLoading(true);
+  const API_BASE = import.meta.env.PROD ? import.meta.env.VITE_API_BASE_URL : '/api'
+  const response = await fetch(`${API_BASE}/${storageKey}`, {
+    method: 'GET'
+  })
+  const json = await response.json();
+  setLinks(json);
+  setLoading(false);
+};
+```
+You’ll notice that I’ve differentiated the API_BASE here. This is because, during local development, we need an API proxy to route requests to the actual target API. However, when deploying the project to Cloudflare Pages, it requires the actual API target URL.
+
+To handle this, we need to configure a server proxy in vite.config.ts:
+```javascript
+server: {
+  proxy: {
+    '/api': {
+      target: 'your api url', // target server location
+      changeOrigin: true,
+      rewrite: (path) => path.replace(/^\/api/, '')
+    }
+  }
+}
+```
+The VITE_API_BASE_URL environment variable is configured in the Cloudflare Pages settings.
+```javascript
+VITE_API_BASE_URL = your access url
+```
+Lastly, don’t forget to fetch the data at the start.
+```javascript
+useEffect(() => {
+  getData();
+}, [storageKey]);
+```
+
+Well done, finally, we have done the project.
+<Image width="3024" height="1806" src="https://storage.trouvaille-blog.com/trouvaille/1732986965232" quality="high" alt="music list" />
+<Image width="3024" height="1806" src="https://storage.trouvaille-blog.com/trouvaille/1732986965225" quality="high" alt="music list" />
+
+You can access my site and use it<br />
+It's location:
+```javascript
+storage.consve.com
+```
+Feel free to leave a comment below!
