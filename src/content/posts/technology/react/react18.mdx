@@ -1,0 +1,86 @@
+---
+title: React 18 Features and Practical Usage
+published: 2024-12-19
+description: "A deep dive into React 18's new features, their implications, and how to effectively use them in your projects."
+tags: ['React']
+category: Technology
+draft: false
+---
+
+# Background
+
+As a Vue user, I started to use React for work after I changed companies. This blog will introduce the updated content and core ideas of React 18 from a personal perspective.
+
+# Diving Deep into React 18: Concurrent Features
+
+React 18 introduced significant changes under the hood, primarily focused on enabling *concurrency*. This unlocks powerful new features and performance improvements. Let's explore the core concepts and how they work.
+
+## What is Concurrency in React?
+
+Traditionally, React's rendering process was synchronous. When an update occurred, React had to complete the entire rendering process before yielding control back to the browser. This could lead to blocking the main thread, resulting in janky or unresponsive UIs, especially with complex components or slow devices.
+
+Concurrency allows React to interrupt rendering of large updates. This means that the browser can handle other events (like user input) while React is working. If a higher-priority update comes in (like a user typing), React can pause the current render, handle the high-priority update, and then resume the original render.
+
+## Key Concepts Enabling Concurrency
+
+React 18's concurrency is built upon several key concepts:
+
+*   **Concurrent Rendering:** This is the core mechanism that allows React to interrupt rendering. Instead of a single, uninterrupted rendering pass, React can now work in phases, pausing and resuming as needed.
+*   **Interruptible Rendering:** React can now interrupt long-running renders to handle more important updates. This is crucial for maintaining a smooth user experience.
+*   **Suspense:** Suspense lets components "wait" for something to load (data, code, images) before rendering. It works seamlessly with concurrent rendering, allowing React to pause rendering components that are waiting for data and resume when the data is available.
+*   **Transitions:** Transitions provide a way to mark non-urgent UI updates. This tells React that these updates can be interrupted without negatively impacting the user experience. This is especially useful for things like search input filtering or navigating between tabs.
+
+## How it Works Under the Hood
+
+React 18 utilizes a new architecture built around *Fiber*. Fiber represents a unit of work. It allows React to break down updates into smaller chunks and prioritize them.
+
+Here's a simplified view of the process:
+
+1.  **Update Triggered:** An update occurs (e.g., `setState`).
+2.  **Work Created:** React creates a tree of Fiber nodes representing the work that needs to be done.
+3.  **Scheduling:** React schedules the work based on its priority. Urgent updates (like user input) are given higher priority.
+4.  **Rendering (Reconciliation):** React begins rendering the components. With concurrent rendering, this process can be paused and resumed.
+5.  **Commit:** Once the rendering is complete (and not interrupted), React commits the changes to the DOM.
+
+## Example: Using Transitions
+
+```jsx
+import { useState, useTransition } from 'react';
+
+function MyComponent() {
+  const [isPending, startTransition] = useTransition();
+  const [filter, setFilter] = useState('');
+  const [list, setList] = useState([]);
+
+  const handleChange = (e) => {
+    startTransition(() => {
+      setFilter(e.target.value);
+      // Simulate a long-running filter operation
+      setTimeout(() => {
+        setList(performFilter(e.target.value));
+      }, 500);
+    });
+  };
+
+  return (
+    <div>
+      <input type="text" value={filter} onChange={handleChange} />
+      {isPending && <p>Filtering...</p>} {/* Show a pending indicator */}
+      <ul>
+        {list.map((item) => (
+          <li key={item.id}>{item.name}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+In this example, the startTransition function tells React that the filter update is not urgent. If the user types quickly, React can interrupt the filtering process to keep the input responsive. The isPending state allows us to display a loading indicator during the transition.
+
+Benefits of Concurrency
+Improved Responsiveness: By allowing interruptions, React keeps the UI responsive even during complex updates.
+Better User Experience: Transitions and Suspense provide smoother transitions and loading experiences.
+Enables New Features: Concurrency is the foundation for features like Server Components and Offscreen Rendering.
+Conclusion
+React 18's concurrent features represent a significant step forward in React's architecture. By understanding the core concepts and how they work, you can unlock the full potential of React and build more performant and user-friendly applications. This is a fundamental shift, and while immediate API changes might be subtle in some cases, the groundwork is laid for future powerful features.
