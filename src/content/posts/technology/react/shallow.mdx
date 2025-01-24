@@ -1,0 +1,259 @@
+---
+title: Shallow function in React and Zustand
+published: 2025-01-25
+description: "Shallow function in React and Zustand"
+tags: ['React', 'Zustand']
+category: Technology
+draft: false
+---
+
+Recently, I was reading the source code of Zustand and came across the shallow function, which they use to optimize certain operations. At the same time, I noticed that Zustand's store is built using useSyncExternalStore. This piqued my curiosity, so I decided to dive into the React source code to learn more about how useSyncExternalStore works. (By the way, if you're interested in how useSyncExternalStore is implemented in React, feel free to follow me — I'll be posting an update on my blog in the near future.)
+
+I became interested in understanding how React achieves this, and I’ve summarized my findings and comparisons above.
+
+### Zustand
+1. Comparison of basic types: If the two values are of basic types and are equal (via Object.is), true is returned directly.
+2. Non-object type: If the type of the two values is not an object (or is null), false is returned.
+3. Comparison of iterable objects: If the two values are iterable objects (isIterable), further determine whether they have an entries method (via hasIterableEntries). If so, compareEntries is used for comparison; if not, compareIterables is used for comparison in order.
+
+```ts
+const isIterable = (obj: object): obj is Iterable<unknown> =>
+  Symbol.iterator in obj
+
+const hasIterableEntries = (
+  value: Iterable<unknown>,
+): value is Iterable<unknown> & {
+  entries(): Iterable<[unknown, unknown]>
+} =>
+  // HACK: avoid checking entries type
+  'entries' in value
+
+const compareEntries = (
+  valueA: { entries(): Iterable<[unknown, unknown]> },
+  valueB: { entries(): Iterable<[unknown, unknown]> },
+) => {
+  const mapA = valueA instanceof Map ? valueA : new Map(valueA.entries())
+  const mapB = valueB instanceof Map ? valueB : new Map(valueB.entries())
+  if (mapA.size !== mapB.size) {
+    return false
+  }
+  for (const [key, value] of mapA) {
+    if (!Object.is(value, mapB.get(key))) {
+      return false
+    }
+  }
+  return true
+}
+
+// Ordered iterables
+const compareIterables = (
+  valueA: Iterable<unknown>,
+  valueB: Iterable<unknown>,
+) => {
+  const iteratorA = valueA[Symbol.iterator]()
+  const iteratorB = valueB[Symbol.iterator]()
+  let nextA = iteratorA.next()
+  let nextB = iteratorB.next()
+  while (!nextA.done && !nextB.done) {
+    if (!Object.is(nextA.value, nextB.value)) {
+      return false
+    }
+    nextA = iteratorA.next()
+    nextB = iteratorB.next()
+  }
+  return !!nextA.done && !!nextB.done
+}
+
+export function shallow<T>(valueA: T, valueB: T): boolean {
+  if (Object.is(valueA, valueB)) {
+    return true
+  }
+  if (
+    typeof valueA !== 'object' ||
+    valueA === null ||
+    typeof valueB !== 'object' ||
+    valueB === null
+  ) {
+    return false
+  }
+  if (!isIterable(valueA) || !isIterable(valueB)) {
+    return compareEntries(
+      { entries: () => Object.entries(valueA) },
+      { entries: () => Object.entries(valueB) },
+    )
+  }
+  if (hasIterableEntries(valueA) && hasIterableEntries(valueB)) {
+    return compareEntries(valueA, valueB)
+  }
+  return compareIterables(valueA, valueB)
+}
+```
+
+### React
+1. Basic equality check: Use the is function to check if objA and objB are equal. If they are equal, return true directly. The is function handles special cases such as NaN and +0/-0.
+2. Type check: Check if objA and objB are both objects and not null. If one of them is not an object or null, return false.
+3. Check the number of keys: Get the keys (property names) of objA and objB, and get their property arrays through Object.keys. Compare the number of properties (lengths) of the two objects. If the lengths are different, return false.
+4. Compare properties one by one: For each property of objA: Check if objB has the property (use hasOwnProperty). Use the is function to compare the property values of objA and objB. If they are not equal, return false. If all properties and values are equal, return true in the end.
+
+```ts
+function is(x: any, y: any) {
+  return (
+    (x === y && (x !== 0 || 1 / x === 1 / y)) || (x !== x && y !== y) // eslint-disable-line no-self-compare
+  );
+}
+
+const hasOwnProperty = Object.prototype.hasOwnProperty;
+
+function shallowEqual(objA: mixed, objB: mixed): boolean {
+  if (is(objA, objB)) {
+    return true;
+  }
+
+  if (
+    typeof objA !== 'object' ||
+    objA === null ||
+    typeof objB !== 'object' ||
+    objB === null
+  ) {
+    return false;
+  }
+
+  const keysA = Object.keys(objA);
+  const keysB = Object.keys(objB);
+
+  if (keysA.length !== keysB.length) {
+    return false;
+  }
+
+  // Test for A's keys different from B.
+  for (let i = 0; i < keysA.length; i++) {
+    const currentKey = keysA[i];
+    if (
+      !hasOwnProperty.call(objB, currentKey) ||
+      // $FlowFixMe[incompatible-use] lost refinement of `objB`
+      !is(objA[currentKey], objB[currentKey])
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+```
+
+### comparion
+#### Characteristics of the zustand shallow Method
+1. More Comprehensive Type Support:
+```ts
+export function shallow<T>(valueA: T, valueB: T): boolean {
+  // Special handling for iterable objects
+  if (isIterable(valueA) && isIterable(valueB)) {
+    if (hasIterableEntries(valueA) && hasIterableEntries(valueB)) {
+      return compareEntries(valueA, valueB)
+    }
+    return compareIterables(valueA, valueB)
+  }
+  // Handling for regular objects
+  return compareEntries(
+    { entries: () => Object.entries(valueA) },
+    { entries: () => Object.entries(valueB) }
+  )
+}
+```
+**Advantages:**
+- Supports specialized comparison for iterable objects such as `Map`, `Set`, `Array`, etc.
+- Offers optimized comparison strategies via `compareEntries` and `compareIterables`.
+- Better type safety with generics.
+
+2.Handling Special Data Structures:
+```ts
+// Handling Map types
+const mapA = valueA instanceof Map ? valueA : new Map(valueA.entries())
+const mapB = valueB instanceof Map ? valueB : new Map(valueB.entries())
+```
+
+#### Characteristics of the react shallowEqual Method
+Simple and Direct Comparison Logic:
+```ts
+function shallowEqual(objA: mixed, objB: mixed): boolean {
+  // Basic type and reference comparison
+  if (is(objA, objB)) {
+    return true;
+  }
+  
+  // Object property comparison
+  const keysA = Object.keys(objA);
+  for (let i = 0; i < keysA.length; i++) {
+    if (!is(objA[currentKey], objB[currentKey])) {
+      return false;
+    }
+  }
+}
+```
+**Advantages:**
+
+- Simpler implementation, easier to understand.
+- Uses the `is` function for special value comparisons (e.g., `NaN`, `+0`, `-0`).
+- Stable performance with no type checks required.
+
+### Performance Comparison
+
+1. **Comparing Regular Objects**:
+
+```js
+const obj1 = { a: 1, b: 2 };
+const obj2 = { a: 1, b: 2 };
+
+// shallowEqual: O(n) simple iteration
+// shallow: O(n) but with additional Object.entries() overhead
+```
+2. **Comparing Arrays**:
+
+```js
+const arr1 = [1, 2, 3];
+const arr2 = [1, 2, 3];
+
+// shallowEqual: Treats arrays as regular objects
+// shallow: Uses optimized iterator comparison, better performance
+```
+
+### Usage Recommendations
+
+1. Use `shallow` when:
+    - You need to handle multiple data structures (especially `Map`, `Set`, etc.).
+    - You require better type safety.
+    - Performance is important in iterator-friendly scenarios.
+2. Use `shallowEqual` when:
+    - You mainly deal with regular objects.
+    - Special value comparisons (e.g., `NaN`, `±0`) are required.
+    - You prioritize simplicity in implementation.
+    - Stable performance is more important.
+
+### Example Scenarios
+
+```js
+// Scenario 1: Comparing regular objects
+const obj1 = { name: 'John', age: 30 };
+const obj2 = { name: 'John', age: 30 };
+// Both methods work, but shallowEqual is slightly better.
+
+// Scenario 2: Comparing Map
+const map1 = new Map([['a', 1], ['b', 2]]);
+const map2 = new Map([['a', 1], ['b', 2]]);
+// shallow is more suitable, with dedicated optimization.
+
+// Scenario 3: Comparing Arrays
+const arr1 = [1, 2, 3];
+const arr2 = [1, 2, 3];
+// shallow is more suitable, using iterator comparison.
+
+// Scenario 4: Special value comparisons
+const val1 = { x: 0, y: NaN };
+const val2 = { x: -0, y: NaN };
+// shallowEqual handles this better.
+
+```
+
+### Conclusion
+
+In summary, `shallow` is a more modern and comprehensive implementation, while `shallowEqual` is a simpler and more traditional approach. Which one to choose depends on your specific use case and requirements.And you can copy them into your project to use.
