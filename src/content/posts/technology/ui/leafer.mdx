@@ -1,0 +1,322 @@
+---
+title: Use React and LeaferJS to build a demo
+published: 2025-05-10
+description: 'Learn how to create a React component that makes use of the LeaferJS 2D graphics engine to create a tap-and-drop game and integrates a localStorage-based leaderboard.'
+tags: ['React', 'Canvas']
+category: Technology
+draft: false
+---
+
+import { Image } from 'astro:assets';
+import leaferDefault from '@/assets/ui/leafer_default.png';
+import leaferClick from '@/assets/ui/leafer_click.png';
+import leaferDone from '@/assets/ui/leafer_done.png';
+
+Today we will learn how to combine the powerful graphics capabilities of LeaferJS with the declarative UI framework of React to create a reusable interactive click game component and equip it with a leaderboard.
+
+In this tutorial, we will:
+
+1. Set up a React component to host the LeaferJS application.
+2. Manage LeaferJS instance during the lifecycle of React component.
+3. Use React state to drive updates to game logic and LeaferJS graphics.
+4. Implement a leaderboard logic based on `localStorage` and display it with React.
+5. Provides complete React component code and usage instructions.
+
+## Introduction
+**LeaferJS is a high-performance 2D graphics rendering engine and UI framework.**
+It aims to provide developers with a simple, easy-to-use and powerful API for creating rich, interactive 2D graphics applications and user interfaces in the browser (mainly through Canvas) or other JavaScript environments.
+
+You can think of LeaferJS as a scene graph system. Unlike procedural drawing that directly operates the native Canvas API, LeaferJS allows you to define and manage graphic elements (such as rectangles, circles, images, text, paths, and `Box` and `Group` containers for layout, etc.) in an object-oriented way. These elements are organized in a hierarchical tree structure. When you modify the properties of an element (such as position, color, size), LeaferJS will intelligently detect the changes and efficiently re-render the affected parts.
+
+**The core goals of LeaferJS include:**
+
+- **Simplify the development of complex graphics**: Reduce the complexity of graphics programming through declarative and object-oriented methods.
+- **Provide rich UI building capabilities**: Not only drawing, but also support UI components, layout and interaction.
+- **Pursue high-performance rendering**: Optimize the rendering process to ensure the smoothness of animation and interaction.
+- **Cross-platform compatibility**: In addition to browser Canvas, other rendering targets or environments may also be supported (please refer to its latest documentation for details).
+
+**Typical application scenarios:**
+
+- Data visualization charts
+- Interactive mini-games or animations
+- Online graphics editors, drawing tools
+- Complex Web UI interfaces and custom controls
+- Any Web application that requires high-performance graphics rendering
+
+## Preparation and project setup
+
+- **React environment**: You need a React project environment. If you are a beginner, you can use `create-react-app` or Vite (`Vite` is recommended for faster development experience) to quickly build it.
+- **LeaferJS**: We will introduce LeaferJS through CDN, or you can install it through npm/yarn in the React project (`pnpm add leafer-ui`). For simplicity, this tutorial assumes that you are importing via CDN. You need to add LeaferJS's `<script>` tag to your `public/index.html`:
+
+```HTML
+<script src="https://unpkg.com/leafer-ui@1.6.1/dist/web.min.js"></script>
+```
+- **Basic knowledge**: Familiar with React Hooks (`useState`, `useEffect`, `useRef`).
+
+## Create the `LeaferClickerGame` React component
+
+We will create a file called `LeaferClickerGame.jsx`. This component will be responsible for rendering the game canvas and leaderboard.
+
+### dependencies
+```ts
+import { useState, useEffect, useRef, MutableRefObject } from 'react';
+import * as LeaferUI from 'leafer-ui';
+```
+
+### prepare manager
+```ts
+const LeaderboardManager = {
+    config: {
+        storageKey: 'reactLeaferGameLeaderboard',
+        maxEntries: 5
+    },
+    scores: [],
+    init: function(userConfig = {}) {
+        this.config = { ...this.config, ...userConfig };
+        const storedScores = localStorage.getItem(this.config.storageKey);
+        if (storedScores) {
+            this.scores = JSON.parse(storedScores);
+        }
+        this._sortScores();
+    },
+    addScore: function({ name, score }: { name: string, score: number }) {
+        if (!name || typeof score !== 'number') return false;
+        this.scores.push({ name, score, date: new Date().toISOString().slice(0,10) });
+        this._sortScores();
+        localStorage.setItem(this.config.storageKey, JSON.stringify(this.scores));
+        return true;
+    },
+    getScores: function(count: number) {
+        const numToReturn = count || this.config.maxEntries;
+        return this.scores.slice(0, numToReturn);
+    },
+    _sortScores: function() {
+        this.scores.sort((a, b) => b.score - a.score);
+        if (this.scores.length > this.config.maxEntries) {
+            this.scores = this.scores.slice(0, this.config.maxEntries);
+        }
+    },
+    escapeHtml: function(unsafe) { // Basic XSS Prevention
+        if (typeof unsafe !== 'string') return '';
+        return unsafe
+             .replace(/&/g, "&amp;")
+             .replace(/</g, "&lt;")
+             .replace(/>/g, "&gt;")
+             .replace(/"/g, "&quot;")
+             .replace(/'/g, "&#039;");
+    }
+};
+```
+### component
+```ts
+const LeaferClickerGame = () => {
+    const leaferContainerRef = useRef(null);
+    const leaferApp: MutableRefObject<LeaferUI.Leafer | null> = useRef(null); // Leafer App instance
+    
+    // Refs for Leafer UI elements
+    const scoreTextRef: MutableRefObject<LeaferUI.Text | null> = useRef(null);
+    const timeTextRef: MutableRefObject<LeaferUI.Text | null> = useRef(null);
+    const buttonRectRef: MutableRefObject<LeaferUI.Rect | null> = useRef(null);
+    const buttonTextRef: MutableRefObject<LeaferUI.Text | null> = useRef(null);
+    const gameTitleRef: MutableRefObject<LeaferUI.Text | null> = useRef(null);
+
+    const startRef = useRef(false)
+
+    const GAME_DURATION = 10;
+
+    const [clicks, setClicks] = useState(0);
+    const [timeLeft, setTimeLeft] = useState(GAME_DURATION);
+    const [gameActive, setGameActive] = useState(false);
+    const [currentButtonText, setCurrentButtonText] = useState('Start');
+
+    const [leaderboard, setLeaderboard] = useState([]);
+    const gameTimerRef: MutableRefObject<number | null> = useRef(null);
+
+    // Event listener for the button
+    const handleTap = () => {
+      if (!startRef.current) { // Start game
+        startRef.current = true
+        setGameActive(true);
+        setClicks(0);
+        setTimeLeft(GAME_DURATION);
+        setCurrentButtonText('Click me!');
+     } else if (timeLeft > 0) { // Game in progress
+         setClicks(c => c + 1);
+         // Visual feedback
+         if(buttonRectRef.current) {
+             buttonRectRef.current.scaleX = 0.95;
+             buttonRectRef.current.scaleY = 0.95;
+             setTimeout(() => {
+                if(buttonRectRef.current) {
+                    buttonRectRef.current.scaleX = 1;
+                    buttonRectRef.current.scaleY = 1;
+                }
+             }, 80);
+         }
+     }
+ };
+
+    // Initialize Leaderboard on component mount
+    useEffect(() => {
+        LeaderboardManager.init();
+        setLeaderboard(LeaderboardManager.getScores(clicks));
+    }, []);
+
+    // LeaferJS Setup and Cleanup
+    useEffect(() => {
+        if (!leaferContainerRef.current || typeof LeaferUI === 'undefined') {
+            console.warn("LeaferUI not loaded or container not found.");
+            return;
+        }
+
+        const app = new LeaferUI.Leafer({
+            view: leaferContainerRef.current,
+            width: 500,
+            height: 350,
+            fill: '#f0f8ff', // AliceBlue background
+        });
+        leaferApp.current = app;
+
+        // Create LeaferJS UI Elements
+        gameTitleRef.current = new LeaferUI.Text({
+            text: 'React & LeaferJS Click Challenge!', fontSize: 24, fontWeight: 'bold', fill: '#333',
+            textAlign: 'center', width: app.width, y: 20
+        });
+        
+        buttonRectRef.current = new LeaferUI.Box({
+            width: 160, height: 50, fill: '#007bff', cornerRadius: 8,
+            stroke: '#0056b3', strokeWidth: 1, shadow: { x: 1, y: 1, blur: 3, color: 'rgba(0,0,0,0.2)' },
+            around: 'center', x: app.width! / 2, y: app.height! / 2 + 20, cursor: 'pointer',
+        });
+
+        buttonTextRef.current = new LeaferUI.Text({
+            text: currentButtonText, fontSize: 18, fill: 'white', textAlign: 'center', zIndex: 10,
+            verticalAlign: 'middle', width: buttonRectRef.current.width, height: buttonRectRef.current.height,
+        });
+
+        buttonRectRef.current.add(buttonTextRef.current)
+
+        scoreTextRef.current = new LeaferUI.Text({
+            text: `Click: 0`, fontSize: 16, fill: '#444', x: 20, y: app.height! - 30
+        });
+        timeTextRef.current = new LeaferUI.Text({
+            text: `Time: ${GAME_DURATION}s`, fontSize: 16, fill: '#444',
+            textAlign: 'right', width: app.width! - 40, x: 20, y: app.height! - 30
+        });
+
+        app.add(gameTitleRef.current);
+        app.add(buttonRectRef.current);
+        app.add(scoreTextRef.current);
+        app.add(timeTextRef.current);
+
+        buttonRectRef.current.on('tap', handleTap);
+
+        return () => { // Cleanup on unmount
+            if (gameTimerRef.current) clearInterval(gameTimerRef.current);
+            // if (buttonRectRef.current) buttonRectRef.current.off('tap', handleTap); // Remove listener
+            if (leaferApp.current) {
+                leaferApp.current.destroy();
+                leaferApp.current = null;
+                buttonRectRef.current?.off('tap', handleTap)
+            }
+        };
+    }, []); // Empty dependency array: runs once on mount, cleans up on unmount
+
+    // Game Timer Logic
+    useEffect(() => {
+        if (gameActive && timeLeft > 0) {
+            gameTimerRef.current = setInterval(() => {
+                setTimeLeft(t => t - 1);
+            }, 1000);
+        } else if (timeLeft === 0 && gameActive) {
+            setGameActive(false);
+            setCurrentButtonText('Time is up!');
+            startRef.current = false
+            if (buttonRectRef.current) buttonRectRef.current.fill = '#ffc107'; // Yellow
+
+            setTimeout(() => { // Delay for user to see "Time Up!"
+                const playerName = prompt(`Congratulations! You have clicked ${clicks} times! \nPlease enter your name：`, 'React Expert');
+                if (playerName && playerName.trim() !== "") {
+                    LeaderboardManager.addScore({ name: playerName, score: clicks });
+                    setLeaderboard(LeaderboardManager.getScores(clicks)); // Update React state for leaderboard
+                }
+                // Reset for next game
+                setCurrentButtonText('Again');
+                if (buttonRectRef.current) buttonRectRef.current.fill = '#007bff'; // Blue
+                setTimeLeft(GAME_DURATION); // Reset time for next game display
+            }, 500);
+        }
+        return () => {
+            if (gameTimerRef.current) clearInterval(gameTimerRef.current);
+        };
+    }, [gameActive, timeLeft, clicks]);
+
+    // Update LeaferJS elements when React state changes
+    useEffect(() => {
+        if (scoreTextRef.current) scoreTextRef.current.text = `Click: ${clicks}`;
+        if (timeTextRef.current) timeTextRef.current.text = `Time: ${timeLeft}s`;
+        if (buttonTextRef.current) buttonTextRef.current.text = currentButtonText;
+        
+        if (buttonRectRef.current) {
+            if (gameActive && timeLeft > 0) {
+                 buttonRectRef.current.fill = '#dc3545'; // Red during game
+            } else if (!gameActive && currentButtonText === 'Time is up!') {
+                 buttonRectRef.current.fill = '#ffc107'; // Yellow for time up
+            } else {
+                 buttonRectRef.current.fill = '#007bff'; // Blue for start/replay
+            }
+        }
+
+    }, [clicks, timeLeft, currentButtonText, gameActive]);
+
+    return (
+        <div style={{ fontFamily: 'Arial, sans-serif', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', padding: '20px', background: '#e9ecef', borderRadius:'10px' }}>
+            <div ref={leaferContainerRef} style={{ width: '500px', height: '350px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', background: '#fff', borderRadius: '8px' }}></div>
+            
+            <div style={{ width: '500px', padding: '15px', backgroundColor: '#ffffff', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }}>
+                <h3 style={{ marginTop: 0, textAlign: 'center', color: '#007bff', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>🏆 Rankings 🏆</h3>
+                {leaderboard.length > 0 ? (
+                    <ol style={{ paddingLeft: '20px', listStyleType: 'decimal-leading-zero' }}>
+                        {leaderboard.map((entry, index) => (
+                            <li key={index} style={{ marginBottom: '8px', padding: '5px 0', borderBottom: '1px dashed #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span>
+                                    <span style={{ fontWeight: 'bold', color: '#343a40' }}>{LeaderboardManager.escapeHtml(entry.name)}:</span>
+                                </span>
+                                <span style={{ color: '#e83e8c', fontWeight: 'bold' }}>{entry.score} <small>pts</small> <small style={{color: '#6c757d'}}>({entry.date})</small></span>
+                            </li>
+                        ))}
+                    </ol>
+                ) : (
+                    <p style={{ textAlign: 'center', color: '#6c757d' }}>No record yet, come and challenge!</p>
+                )}
+            </div>
+        </div>
+    );
+};
+```
+
+### export
+```ts
+export default LeaferClickerGame;
+```
+
+### use in app
+```ts
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import LeaferClickerGame from './LeaferGame.tsx'
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <LeaferClickerGame />
+  </StrictMode>,
+)
+```
+
+## Run
+### default state
+<Image alt="leafer default" src={leaferDefault} quality="high" />
+### click state
+<Image alt="leafer click" src={leaferClick} quality="high" />
+### done state
+<Image alt="leafer done" src={leaferDone} quality="high" />
