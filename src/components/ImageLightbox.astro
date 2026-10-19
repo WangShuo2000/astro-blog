@@ -1,0 +1,23 @@
+<script>
+  import PhotoSwipeLightbox from 'photoswipe/lightbox'
+  import 'photoswipe/style.css'
+
+  // Only article pages include this component. Static loading avoids a serial
+  // module request on image-heavy pages; the full viewer loads on first use.
+  const lightbox = new PhotoSwipeLightbox({
+    gallery: '.custom-md img, #post-cover img',
+    pswpModule: () => import('photoswipe'),
+    padding: { top: 24, bottom: 24, left: 24, right: 24 },
+    wheelToZoom: true,
+  })
+  lightbox.addFilter('domItemData', (data, element) => {
+    if (element instanceof HTMLImageElement) {
+      data.src = element.src
+      data.w = Number(element.getAttribute('width')) || element.naturalWidth
+      data.h = Number(element.getAttribute('height')) || element.naturalHeight
+      data.msrc = element.currentSrc || element.src
+    }
+    return data
+  })
+  lightbox.init()
+</script>

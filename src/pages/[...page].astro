@@ -1,23 +1,30 @@
 ---
 import type { GetStaticPaths } from 'astro'
+import { Image } from 'astro:assets'
+import { Icon } from 'astro-icon/components'
+import MainGridLayout from '../layouts/MainGridLayout.astro'
 import PostPage from '../components/PostPage.astro'
 import Pagination from '../components/control/Pagination.astro'
+import CategoryNav from '../components/CategoryNav.astro'
 import { PAGE_SIZE } from '../constants/constants'
-import MainGridLayout from '../layouts/MainGridLayout.astro'
 import { getSortedPosts } from '../utils/content-utils'
-
-export const getStaticPaths = (async ({ paginate }) => {
-  const allBlogPosts = await getSortedPosts()
-  return paginate(allBlogPosts, { pageSize: PAGE_SIZE })
-}) satisfies GetStaticPaths
-// https://github.com/withastro/astro/issues/6507#issuecomment-1489916992
-
+import { getPostUrlBySlug, url } from '../utils/url-utils'
+import { profileConfig } from '../config'
+import photograph from '../assets/photography/zhenjiang/1.jpeg'
+export const getStaticPaths = (async ({ paginate }) => paginate(await getSortedPosts(), { pageSize: PAGE_SIZE })) satisfies GetStaticPaths
 const { page } = Astro.props
-
-const len = page.data.length
+const photographyPost = (await getSortedPosts()).find(post => post.data.category?.toLowerCase() === 'photography')
 ---
-
 <MainGridLayout>
-    <PostPage page={page}></PostPage>
-    <Pagination class="mx-auto onload-animation" page={page} style=`animation-delay: calc(var(--content-delay) + ${(len)*50}ms)`></Pagination>
+  {page.currentPage === 1 ? <section class="journal-intro" aria-labelledby="home-title">
+    <h1 id="home-title">Notes on code, life &amp; <span class="intro-second-line">everything between.</span></h1>
+    <div class="intro-about"><span class="intro-rule"></span><p class="intro-name">{profileConfig.name} —</p><p class="intro-role">Developer, traveler &amp; photographer.</p><p>I write about technology, useful tools, photography, and the small details that make life interesting.</p></div>
+  </section> : <header class="page-heading"><p class="eyebrow">THE JOURNAL / PAGE {page.currentPage}</p><h1>More notes.<br /><em>More discoveries.</em></h1><p>Continuing the collection of things worth keeping.</p></header>}
+  <section aria-labelledby="writing-title">
+    <div class="section-heading"><h2 class="eyebrow" id="writing-title">{page.currentPage === 1 ? 'LATEST WRITING' : 'FROM THE JOURNAL'}</h2><CategoryNav compact /></div>
+    <PostPage page={page}>
+      {photographyPost && <a slot="photography" class="photography-feature" href={getPostUrlBySlug(photographyPost.id)}><Image src={photograph} alt="An ornate traditional crown, photographed in Zhenjiang" widths={[360, 640]} sizes="(max-width: 600px) 100vw, 25vw" loading="lazy" /><span>{photographyPost.data.title}<Icon name="material-symbols:arrow-right-alt-rounded" /></span></a>}
+    </PostPage>
+    <div class="journal-bottom"><a class="text-link" href={url('/archive/')}>Explore the archive <Icon name="material-symbols:arrow-right-alt-rounded" /></a><Pagination page={page} /></div>
+  </section>
 </MainGridLayout>

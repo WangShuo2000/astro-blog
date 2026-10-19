@@ -1,0 +1,55 @@
+---
+import { Icon } from 'astro-icon/components'
+import { getSortedPosts } from '../utils/content-utils'
+import { getPostUrlBySlug, url } from '../utils/url-utils'
+const posts = (await getSortedPosts()).map(post => ({ title: post.data.title, description: post.data.description, tags: post.data.tags.join(' '), category: post.data.category || '', url: getPostUrlBySlug(post.id) }))
+---
+<dialog id="search-dialog" class="search-dialog" aria-labelledby="search-title" data-index={url('/pagefind/pagefind.js')}>
+  <div class="search-heading"><h2 id="search-title">Find a story.</h2><button class="icon-button" id="search-close" aria-label="Close search"><Icon name="material-symbols:close-rounded" /></button></div>
+  <label class="eyebrow" for="journal-search">SEARCH THE JOURNAL</label>
+  <input id="journal-search" type="search" placeholder="A topic, a tool, a little curiosity…" autocomplete="off" />
+  <p id="search-status" class="search-status" role="status">Search articles by title, topic or content.</p>
+  <div id="search-results" class="search-results"></div>
+  <script is:inline type="application/json" id="search-data" set:html={JSON.stringify(posts).replace(/</g, '\u003c')} />
+</dialog>
+<script>
+  type Result = { title: string; description: string; url: string; category?: string; tags?: string }
+  const dialog = document.querySelector<HTMLDialogElement>('#search-dialog')!
+  const input = document.querySelector<HTMLInputElement>('#journal-search')!
+  const results = document.querySelector<HTMLElement>('#search-results')!
+  const status = document.querySelector<HTMLElement>('#search-status')!
+  const posts: Result[] = JSON.parse(document.querySelector('#search-data')!.textContent!)
+  let pagefind: any
+  let request = 0
+  let timer: ReturnType<typeof setTimeout>
+  document.querySelector('#search-open')?.addEventListener('click', () => { dialog.showModal(); input.focus() })
+  document.querySelector('#search-close')?.addEventListener('click', () => dialog.close())
+  dialog.addEventListener('click', e => { if (e.target === dialog) { const r = dialog.getBoundingClientRect(); if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) dialog.close() } })
+  document.addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); if (!dialog.open) dialog.showModal(); input.focus() } })
+  async function search() {
+    const current = ++request
+    const query = input.value.trim()
+    results.replaceChildren()
+    if (!query) { status.textContent = 'Search articles by title, topic or content.'; return }
+    status.textContent = 'Searching…'
+    let found: Result[]
+    try {
+      const index = dialog.dataset.index!
+      pagefind ||= await import(/* @vite-ignore */ index)
+      const response = await pagefind.search(query)
+      found = await Promise.all(response.results.slice(0, 20).map(async (item: any) => { const data = await item.data(); return { title: data.meta.title, url: data.url, description: data.excerpt.replace(/<[^>]*>/g, '') } }))
+    } catch {
+      const terms = query.toLocaleLowerCase().split(/\s+/)
+      found = posts.filter(post => terms.every(term => `${post.title} ${post.description} ${post.category} ${post.tags}`.toLocaleLowerCase().includes(term)))
+    }
+    if (current !== request) return
+    status.textContent = found.length ? `${found.length} ${found.length === 1 ? 'story' : 'stories'} found` : 'No stories found. Try another word.'
+    for (const item of found) {
+      const a = document.createElement('a'); a.href = item.url
+      const title = document.createElement('h3'); title.textContent = item.title
+      const excerpt = document.createElement('p'); excerpt.textContent = item.description
+      a.append(title, excerpt); results.append(a)
+    }
+  }
+  input.addEventListener('input', () => { ++request; clearTimeout(timer); timer = setTimeout(search, 180) })
+</script>

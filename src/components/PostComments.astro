@@ -1,19 +1,18 @@
-<section class="giscus mx-auto mt-10 w-full"></section>
-
-<script
-  src="https://giscus.app/client.js"
-  data-repo="WangShuo2000/astro-blog"
-  data-repo-id="R_kgDONOMV5Q"
-  data-category="General"
-  data-category-id="DIC_kwDONOMV5c4Ckc5X"
-  data-mapping="url"
-  data-strict="0"
-  data-reactions-enabled="1"
-  data-emit-metadata="0"
-  data-input-position="bottom"
-  data-theme="preferred_color_scheme"
-  data-lang="zh-CN"
-  data-loading="lazy"
-  crossorigin="anonymous"
-  async>
+<section class="giscus" aria-label="Article discussion"></section>
+<script>
+  const host = document.querySelector('.giscus')
+  if (host) {
+    const script = document.createElement('script')
+    script.src = 'https://giscus.app/client.js'
+    script.async = true
+    script.crossOrigin = 'anonymous'
+    const settings = {
+      repo: 'WangShuo2000/astro-blog', 'repo-id': 'R_kgDONOMV5Q', category: 'General',
+      'category-id': 'DIC_kwDONOMV5c4Ckc5X', mapping: 'url', strict: '0',
+      'reactions-enabled': '1', 'emit-metadata': '0', 'input-position': 'bottom',
+      theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light', lang: 'zh-CN', loading: 'lazy',
+    }
+    for (const [key, value] of Object.entries(settings)) script.setAttribute(`data-${key}`, value)
+    host.append(script)
+  }
 </script>

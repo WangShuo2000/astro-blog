@@ -1,6 +1,4 @@
 ---
-import '@fontsource-variable/jetbrains-mono'
-import '@fontsource-variable/jetbrains-mono/wght-italic.css'
 
 interface Props {
   class: string
@@ -31,6 +29,8 @@ const className = Astro.props.class
       wrapper.className = "relative code-block";
 
       let copyButton = document.createElement("button");
+      copyButton.type = "button";
+      copyButton.setAttribute("aria-label", "Copy code");
       copyButton.className = "copy-btn btn-regular-dark absolute active:scale-90 h-8 w-8 top-2 right-2 opacity-75 text-sm p-1.5 rounded-lg transition-all ease-in-out";
 
       codeBlock.setAttribute("tabindex", "0");
@@ -53,10 +53,13 @@ const className = Astro.props.class
         }
         let text = codeBlock?.querySelector("code")?.innerText;
         if (text === undefined) return;
-        await navigator.clipboard.writeText(text);
+        try { await navigator.clipboard.writeText(text); }
+        catch { copyButton.setAttribute("aria-label", "Copy failed. Select the code to copy manually."); return; }
+        copyButton.setAttribute("aria-label", "Code copied");
         copyButton.classList.add("success");
         timeout = setTimeout(() => {
           copyButton.classList.remove("success");
+          copyButton.setAttribute("aria-label", "Copy code");
         }, 1000);
       });
     }
@@ -119,7 +122,7 @@ const className = Astro.props.class
         text-decoration-color: var(--link-active)
 
     code
-      font-family: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace
+      font-family: var(--font-code), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace
       background: var(--inline-code-bg)
       color: var(--inline-code-color)
       padding: 0.125rem 0.25rem

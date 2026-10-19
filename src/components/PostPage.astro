@@ -1,28 +1,11 @@
 ---
-import { getPostUrlBySlug } from '@utils/url-utils'
 import PostCard from './PostCard.astro'
-
+import type { Page } from 'astro'
+import type { CollectionEntry } from 'astro:content'
+interface Props { page: Page<CollectionEntry<'posts'>> }
 const { page } = Astro.props
-
-let delay = 0
-const interval = 50
+const featured = page.currentPage === 1 ? page.data[0] : null
+const rest = featured ? page.data.slice(1) : page.data
 ---
-<div class="transition flex flex-col rounded-[var(--radius-large)] bg-[var(--card-bg)] py-1 md:py-0 md:bg-transparent md:gap-4 mb-4">
-    {page.data.map((entry: { data: { draft: boolean; title: string; tags: string[]; category: string; published: Date; image: string; description: string; }; slug: string; }) => {
-        return (
-            <PostCard
-                    entry={entry}
-                    title={entry.data.title}
-                    tags={entry.data.tags}
-                    category={entry.data.category}
-                    published={entry.data.published}
-                    url={getPostUrlBySlug(entry.slug)}
-                    image={entry.data.image}
-                    description={entry.data.description}
-                    draft={entry.data.draft}
-                    class:list="onload-animation"
-                    style={`animation-delay: calc(var(--content-delay) + ${delay++ * interval}ms);`}
-            ></PostCard>
-        );
-    })}
-</div>
+{featured && <div class="featured-layout"><PostCard entry={featured} featured /><slot name="photography" /></div>}
+<div class="post-list">{rest.map(entry => <PostCard entry={entry} />)}</div>
