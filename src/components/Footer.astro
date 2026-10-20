@@ -1,8 +1,20 @@
 ---
 import { profileConfig, siteConfig } from '../config'
 import { url } from '../utils/url-utils'
+import TagInvite from './TagInvite.astro'
 ---
+<div class="footer-area">
+<TagInvite />
 <footer class="site-footer">
   <div><a class="footer-brand" href={url('/')}>{siteConfig.title}</a><p>A personal journal, by {profileConfig.name}.</p></div>
   <div class="footer-meta"><nav aria-label="Footer"><a href={url('/rss.xml')}>RSS</a><a href={url('/sitemap-index.xml')}>Sitemap</a><a href="https://github.com/WangShuo2000/astro-blog" target="_blank" rel="noopener noreferrer">GitHub</a></nav><p>© {new Date().getFullYear()} {profileConfig.name} · Built with <a href="https://astro.build" target="_blank" rel="noopener noreferrer">Astro</a> · Theme based on <a href="https://github.com/saicaca/fuwari" target="_blank" rel="noopener noreferrer">Fuwari</a></p></div>
 </footer>
+</div>
+
+<style>
+  .footer-area { margin-top: 100px; }
+  footer.site-footer { margin-top: 0; border-top: 0; }
+  @media (max-width: 768px) {
+    .footer-area { margin-top: 64px; }
+  }
+</style>

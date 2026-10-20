@@ -1,0 +1,41 @@
+---
+import { Icon } from 'astro-icon/components'
+
+const inviteUrl = 'https://569078.dedicated-afflink.com/#/auth/45Qep1Zq'
+---
+
+<aside id="tag-invite" class="tag-invite" aria-labelledby="tag-invite-title" data-pagefind-ignore lang="zh-CN">
+  <div class="invite-brand">
+    <span class="eyebrow">推广链接</span>
+    <h2 id="tag-invite-title">TAG</h2>
+  </div>
+  <div class="invite-copy">
+    <p class="invite-title">网络服务推荐</p>
+    <p>通过我的邀请链接，了解并注册 TAG。</p>
+  </div>
+  <a class="invite-link" href={inviteUrl} target="_blank" rel="noopener noreferrer sponsored" aria-label="通过邀请链接注册 TAG（新窗口打开）">
+    注册 TAG <Icon name="material-symbols:arrow-outward-rounded" />
+  </a>
+</aside>
+
+<style>
+  .tag-invite {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 36px;
+    padding-block: 28px;
+    border-block: 1px solid var(--rule);
+  }
+  .invite-brand { min-width: 80px; }
+  .invite-brand h2 { color: var(--ink); font-family: var(--serif); font-size: 36px; line-height: 1.1; letter-spacing: -.04em; margin-top: 8px; }
+  .invite-copy { color: var(--muted); font-size: 14px; line-height: 1.8; }
+  .invite-copy .invite-title { color: var(--ink); font-size: 18px; margin-bottom: 4px; }
+  .invite-link { display: inline-flex; align-items: center; justify-content: center; gap: 16px; min-height: 44px; padding: 10px 18px; border: 1px solid var(--accent); color: var(--accent); font-size: 14px; white-space: nowrap; }
+  .invite-link:hover { background: var(--soft); }
+  .invite-link svg { width: 18px; height: 18px; }
+  @media (max-width: 600px) {
+    .tag-invite { grid-template-columns: 1fr; gap: 16px; padding-block: 24px; }
+    .invite-link { justify-self: start; }
+  }
+</style>
