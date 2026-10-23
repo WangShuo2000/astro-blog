@@ -37,6 +37,7 @@ New articles default to `zh-CN`; use `pnpm new-post example --lang en` for Engli
 ## Feeds, categories, and sharing
 
 - RSS publishes the frontmatter description and a link to the full article. It deliberately does not render MDX source as plain Markdown; images, components, and code remain available on the article page.
+- Production RSS also depends on two manually managed Cloudflare rules. See [Cloudflare configuration and RSS troubleshooting](docs/cloudflare.md) for their exact settings, verification commands, and rollback steps.
 - Category URLs use stable lowercase slugs such as `/archive/category/technology/`, with separate display names. `Technology` and `technology` resolve to one category. `public/_redirects` preserves the existing mixed-case URLs with HTTP 301 redirects on Cloudflare Pages. Other hosts need equivalent redirect rules; `astro preview` does not apply `_redirects`. The supplied rules assume the current `base: '/'`.
 - Every page includes absolute Open Graph and Twitter image URLs. The default is a landscape JPEG generated from `src/assets/images/banner.jpeg`; an article's `image` overrides it. Generated images fit within 1200×630 without enlarging small originals, and the metadata reports their actual size. Local covers resolve relative to the article source file. Public (`/…`) or HTTPS images can also be used; provide a share-ready image for those sources.
 - Category, tag, and journal pagination pages have distinct titles and descriptions. Article JSON-LD includes the same language and share image as its page.
