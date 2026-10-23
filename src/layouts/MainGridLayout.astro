@@ -3,7 +3,8 @@ import Layout from './Layout.astro'
 import Navbar from '@components/Navbar.astro'
 import Footer from '@components/Footer.astro'
 import type { MarkdownHeading } from 'astro'
-interface Props { title?: string; banner?: string; description?: string; lang?: string; setOGTypeArticle?: boolean; headings?: MarkdownHeading[] }
+import type { SocialImage } from '../utils/social-image'
+interface Props { title?: string; banner?: string; description?: string; lang?: string; setOGTypeArticle?: boolean; headings?: MarkdownHeading[]; socialImage?: SocialImage }
 ---
 <Layout {...Astro.props}>
   <slot slot="head" name="head" />

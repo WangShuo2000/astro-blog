@@ -1,24 +1,30 @@
 ---
-import { getCategoryList } from '@utils/content-utils'
+import { getCategoryList, type Category } from '@utils/content-utils'
+import { UNCATEGORIZED_SLUG } from '@utils/category-utils'
 import MainGridLayout from '@layouts/MainGridLayout.astro'
 import ArchivePanel from '@components/ArchivePanel.astro'
-import { i18n } from '@i18n/translation'
-import I18nKey from '@i18n/i18nKey'
+
+interface Props {
+  category: Category
+}
 
 export async function getStaticPaths() {
   const categories = await getCategoryList()
-  return categories.map(category => {
-    return {
+  return categories
+    .filter(category => category.slug !== UNCATEGORIZED_SLUG)
+    .map(category => ({
       params: {
-        category: category.name,
+        category: category.slug,
       },
-    }
-  })
+      props: { category },
+    }))
 }
 
-const category = Astro.params.category as string
+const { category } = Astro.props
+const title = `${category.name} articles`
+const description = `Explore ${category.count} ${category.count === 1 ? 'article' : 'articles'} in ${category.name}: notes, ideas, and discoveries from the journal.`
 ---
 
-<MainGridLayout title={i18n(I18nKey.archive)} description={i18n(I18nKey.archive)}>
-    <ArchivePanel categories={[category]}></ArchivePanel>
+<MainGridLayout title={title} description={description}>
+    <ArchivePanel categories={[category.slug]}></ArchivePanel>
 </MainGridLayout>

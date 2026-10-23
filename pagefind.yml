@@ -1,0 +1,3 @@
+# Search every article from every page, regardless of its HTML language.
+# Chinese segmentation also indexes English words; English stemming is disabled.
+force_language: zh

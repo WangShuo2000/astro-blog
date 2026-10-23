@@ -5,6 +5,7 @@ description: 'introduce Teleport in vue3'
 tags: ['Vue3', 'Component']
 category: Technology
 draft: false
+lang: zh-CN
 ---
 
 ## 背景

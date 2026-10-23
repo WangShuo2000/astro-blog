@@ -5,6 +5,7 @@ description: 'Test my first blog on my domain'
 tags: ['First']
 category: Test
 draft: false
+lang: en
 ---
 
 # Introduction

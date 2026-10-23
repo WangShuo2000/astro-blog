@@ -1,44 +1,18 @@
 import type { Favicon } from '@/types/config.ts'
 
 export const defaultFavicons: Favicon[] = [
-  {
-    src: '/favicon/favicon-light-32.png',
-    theme: 'light',
-    sizes: '32x32',
-  },
-  {
-    src: '/favicon/favicon-light-128.png',
-    theme: 'light',
-    sizes: '128x128',
-  },
-  {
-    src: '/favicon/favicon-light-180.png',
-    theme: 'light',
-    sizes: '180x180',
-  },
-  {
-    src: '/favicon/favicon-light-192.png',
-    theme: 'light',
-    sizes: '192x192',
-  },
-  {
-    src: '/favicon/favicon-dark-32.png',
-    theme: 'dark',
-    sizes: '32x32',
-  },
-  {
-    src: '/favicon/favicon-dark-128.png',
-    theme: 'dark',
-    sizes: '128x128',
-  },
-  {
-    src: '/favicon/favicon-dark-180.png',
-    theme: 'dark',
-    sizes: '180x180',
-  },
-  {
-    src: '/favicon/favicon-dark-192.png',
-    theme: 'dark',
-    sizes: '192x192',
-  },
+  // Unconditional light icons also serve browsers without media-query support.
+  ...([16, 32, 192] as const).map(size => ({
+    src: `/favicon/trouvaille-light-${size}.png`,
+    sizes: `${size}x${size}`,
+    type: 'image/png',
+  })),
+  ...([16, 32, 192] as const).map(size => ({
+    src: `/favicon/trouvaille-dark-${size}.png`,
+    theme: 'dark' as const,
+    sizes: `${size}x${size}`,
+    type: 'image/png',
+  })),
+  { src: '/favicon/trouvaille.svg', sizes: 'any', type: 'image/svg+xml' },
+  { src: '/favicon/trouvaille-apple-touch.png', rel: 'apple-touch-icon', sizes: '180x180' },
 ]

@@ -1,6 +1,7 @@
 import { defineCollection } from 'astro:content'
 import { glob } from 'astro/loaders'
 import { z } from 'astro/zod'
+import { normalizeLanguageTag } from './utils/language-utils'
 
 const postsCollection = defineCollection({
   loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/posts' }),
@@ -12,7 +13,20 @@ const postsCollection = defineCollection({
     image: z.string().optional().default(''),
     tags: z.array(z.string()).optional().default([]),
     category: z.string().optional().default(''),
-    lang: z.string().optional().default(''),
+    lang: z
+      .string()
+      .default('zh-CN')
+      .transform((language, context) => {
+        try {
+          return normalizeLanguageTag(language)
+        } catch {
+          context.addIssue({
+            code: 'custom',
+            message: 'Use a valid language tag, such as zh-CN or en.',
+          })
+          return z.NEVER
+        }
+      }),
 
     /* For internal use */
     prevTitle: z.string().default(''),

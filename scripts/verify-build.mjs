@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
 import sanitizeHtml from 'sanitize-html'
+import { verifyContentBuild } from './verify-content.mjs'
 
 const root = path.resolve(process.argv[2] || 'dist')
 const baseline = process.argv[3] && path.resolve(process.argv[3])
@@ -205,6 +206,7 @@ if (baseline) {
     'RSS article URLs/order changed',
   )
 }
+const contentChecks = await verifyContentBuild(root)
 console.log(
   JSON.stringify(
     {
@@ -213,6 +215,7 @@ console.log(
       articles: posts.length,
       rssItems: rssLinks.length,
       baselineCompared: Boolean(baseline),
+      ...contentChecks,
     },
     null,
     2,

@@ -4,33 +4,46 @@ import GlobalStyles from '@components/GlobalStyles.astro'
 import { profileConfig, siteConfig } from '@/config'
 import { defaultFavicons } from '../constants/icon'
 import { url } from '../utils/url-utils'
+import { normalizeLanguageTag } from '../utils/language-utils'
+import { getSocialImage, type SocialImage } from '../utils/social-image'
 import '../base.css'
 import '../editorial.css'
-interface Props { title?: string; banner?: string; description?: string; lang?: string; setOGTypeArticle?: boolean }
+interface Props { title?: string; banner?: string; description?: string; lang?: string; setOGTypeArticle?: boolean; socialImage?: SocialImage }
 const { title, description, lang, setOGTypeArticle } = Astro.props
-const pageTitle = title ? `${title} — ${siteConfig.title}` : `${siteConfig.title} — Notes worth finding.`
+const pageTitle = title ? `${title} — ${siteConfig.title}` : `${siteConfig.title} — ${siteConfig.subtitle}`
+const pageDescription = description?.trim() || 'Notes on code, life & everything between. A personal journal by Jack Wang.'
+const pageLanguage = normalizeLanguageTag(lang || siteConfig.lang)
+const socialImage = Astro.props.socialImage || await getSocialImage()
+const socialImageUrl = new URL(socialImage.src, Astro.site).href
 const canonical = new URL(Astro.url.pathname, Astro.site)
 const favicons = siteConfig.favicon.length ? siteConfig.favicon : defaultFavicons
 ---
 <!doctype html>
-<html lang={(lang || siteConfig.lang).replace('_', '-')}>
+<html lang={pageLanguage}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
     <title>{pageTitle}</title>
-    <meta name="description" content={description || 'Notes on code, life & everything between. A personal journal by Jack Wang.'} />
+    <meta name="description" content={pageDescription} />
     <meta name="author" content={profileConfig.name} />
     <link rel="canonical" href={canonical} />
     <meta property="og:site_name" content={siteConfig.title} />
     <meta property="og:url" content={canonical} />
     <meta property="og:title" content={pageTitle} />
-    <meta property="og:description" content={description || pageTitle} />
+    <meta property="og:description" content={pageDescription} />
     <meta property="og:type" content={setOGTypeArticle ? 'article' : 'website'} />
+    <meta property="og:image" content={socialImageUrl} />
+    <meta property="og:image:alt" content={socialImage.alt} />
+    {socialImage.width && <meta property="og:image:width" content={String(socialImage.width)} />}
+    {socialImage.height && <meta property="og:image:height" content={String(socialImage.height)} />}
+    {socialImage.type && <meta property="og:image:type" content={socialImage.type} />}
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={pageTitle} />
-    <meta name="twitter:description" content={description || pageTitle} />
-    {favicons.map(icon => <link rel="icon" href={icon.src.startsWith('/') ? url(icon.src) : icon.src} sizes={icon.sizes} media={icon.theme && `(prefers-color-scheme: ${icon.theme})`} />)}
+    <meta name="twitter:description" content={pageDescription} />
+    <meta name="twitter:image" content={socialImageUrl} />
+    <meta name="twitter:image:alt" content={socialImage.alt} />
+    {favicons.map(icon => <link rel={icon.rel || 'icon'} href={icon.src.startsWith('/') ? url(icon.src) : icon.src} type={icon.type} sizes={icon.sizes} media={icon.theme && `(prefers-color-scheme: ${icon.theme})`} />)}
     <link rel="sitemap" href={url('/sitemap-index.xml')} />
     <link rel="alternate" type="application/rss+xml" title={siteConfig.title} href={url('/rss.xml')} />
     <link rel="stylesheet" href="https://cdn.staticfile.net/KaTeX/0.16.9/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous" />

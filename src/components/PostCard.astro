@@ -6,6 +6,7 @@ import ImageWrapper from './misc/ImageWrapper.astro'
 import { getPostUrlBySlug, getCategoryUrl } from '../utils/url-utils'
 import { formatDateToYYYYMMDD } from '../utils/date-utils'
 import { profileConfig } from '../config'
+import { getCategoryName } from '../utils/category-utils'
 interface Props { entry: CollectionEntry<'posts'>; featured?: boolean }
 const { entry, featured = false } = Astro.props
 const { data } = entry
@@ -14,7 +15,7 @@ const cover = data.image || (featured ? profileConfig.avatar : '')
 ---
 <article class:list={['journal-post', { 'featured-post': featured }]}>
   {featured && cover && <a class="featured-image" href={href} tabindex="-1" aria-hidden="true"><ImageWrapper src={cover} basePath={data.image ? getPostAssetBasePath(entry) : '/'} alt={data.image ? data.title : 'Artwork from Jack Wang’s profile'} sizes="(min-width: 1100px) 480px, (min-width: 481px) 40vw, 90vw" /></a>}
-  <div class="post-meta"><time datetime={formatDateToYYYYMMDD(data.published)}>{formatDateToYYYYMMDD(data.published)}</time><a href={getCategoryUrl(data.category || '')}>{data.category || 'Uncategorized'}</a></div>
+  <div class="post-meta"><time datetime={formatDateToYYYYMMDD(data.published)}>{formatDateToYYYYMMDD(data.published)}</time><a href={getCategoryUrl(data.category || '')}>{getCategoryName(data.category)}</a></div>
   <div class="post-summary"><h2><a data-astro-prefetch href={href}>{data.title}</a></h2><p>{data.description}</p>{featured && <a data-astro-prefetch class="text-link" href={href}>Read article <Icon name="material-symbols:arrow-right-alt-rounded" /></a>}</div>
   {!featured && <a class="post-read text-link" href={href} aria-label={`Read ${data.title}`}><span>Read article</span><Icon name="material-symbols:arrow-right-alt-rounded" /></a>}
 </article>

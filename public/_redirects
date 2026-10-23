@@ -1,0 +1,13 @@
+# Legacy category links. Cloudflare Pages applies these HTTP 301 redirects.
+# Other static hosts must configure equivalent redirects; astro preview does not.
+# Keep these rules when editing display names. Paths assume astro.config base '/'.
+/archive/category/Technology/ /archive/category/technology/ 301
+/archive/category/Technology /archive/category/technology/ 301
+/archive/category/Tool/ /archive/category/tool/ 301
+/archive/category/Tool /archive/category/tool/ 301
+/archive/category/Photography/ /archive/category/photography/ 301
+/archive/category/Photography /archive/category/photography/ 301
+/archive/category/Test/ /archive/category/test/ 301
+/archive/category/Test /archive/category/test/ 301
+/archive/category/Uncategorized/ /archive/category/uncategorized/ 301
+/archive/category/Uncategorized /archive/category/uncategorized/ 301

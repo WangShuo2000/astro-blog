@@ -15,7 +15,7 @@ export const getStaticPaths = (async ({ paginate }) => paginate(await getSortedP
 const { page } = Astro.props
 const photographyPost = (await getSortedPosts()).find(post => post.data.category?.toLowerCase() === 'photography')
 ---
-<MainGridLayout>
+<MainGridLayout title={page.currentPage > 1 ? `Journal · Page ${page.currentPage}` : undefined} description={page.currentPage > 1 ? `Page ${page.currentPage} of Jack Wang’s journal: more notes on technology, useful tools, photography, and life.` : undefined}>
   {page.currentPage === 1 ? <section class="journal-intro" aria-labelledby="home-title">
     <h1 id="home-title">Notes on code, life &amp; <span class="intro-second-line">everything between.</span></h1>
     <div class="intro-about"><span class="intro-rule"></span><p class="intro-name">{profileConfig.name} —</p><p class="intro-role">Developer, traveler &amp; photographer.</p><p>I write about technology, useful tools, photography, and the small details that make life interesting.</p></div>

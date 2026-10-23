@@ -32,6 +32,8 @@ export type Favicon = {
   src: string
   theme?: 'light' | 'dark'
   sizes?: string
+  type?: string
+  rel?: 'icon' | 'apple-touch-icon'
 }
 
 export enum LinkPreset {

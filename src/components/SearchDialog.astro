@@ -2,6 +2,7 @@
 import { Icon } from 'astro-icon/components'
 import { getSortedPosts } from '../utils/content-utils'
 import { getPostUrlBySlug, url } from '../utils/url-utils'
+import { serializeJson } from '../utils/json-utils'
 const posts = (await getSortedPosts()).map(post => ({ title: post.data.title, description: post.data.description, tags: post.data.tags.join(' '), category: post.data.category || '', url: getPostUrlBySlug(post.id) }))
 ---
 <dialog id="search-dialog" class="search-dialog" aria-labelledby="search-title" data-index={url('/pagefind/pagefind.js')}>
@@ -10,7 +11,7 @@ const posts = (await getSortedPosts()).map(post => ({ title: post.data.title, de
   <input id="journal-search" type="search" placeholder="A topic, a tool, a little curiosity…" autocomplete="off" />
   <p id="search-status" class="search-status" role="status">Search articles by title, topic or content.</p>
   <div id="search-results" class="search-results"></div>
-  <script is:inline type="application/json" id="search-data" set:html={JSON.stringify(posts).replace(/</g, '\u003c')} />
+  <script is:inline type="application/json" id="search-data" set:html={serializeJson(posts)} />
 </dialog>
 <script>
   type Result = { title: string; description: string; url: string; category?: string; tags?: string }

@@ -1,21 +1,17 @@
 ---
 import { getCategoryList } from '../utils/content-utils'
+import { getCategorySlug } from '../utils/category-utils'
 import { getCategoryUrl, url } from '../utils/url-utils'
 interface Props { selected?: string; compact?: boolean }
 const { selected = '', compact = false } = Astro.props
-const seen = new Set<string>()
-const categories = (await getCategoryList()).filter(category => {
-  const key = category.name.toLowerCase()
-  if (seen.has(key)) return false
-  seen.add(key)
-  return !compact || ['technology', 'tool', 'photography'].includes(key)
-}).sort((a, b) => {
+const selectedSlug = selected ? getCategorySlug(selected) : ''
+const categories = (await getCategoryList()).filter(category => !compact || ['technology', 'tool', 'photography'].includes(category.slug)).sort((a, b) => {
   const priority = ['technology', 'tool', 'photography']
-  const rank = (name: string) => { const i = priority.indexOf(name.toLowerCase()); return i < 0 ? 99 : i }
-  return rank(a.name) - rank(b.name) || a.name.localeCompare(b.name)
+  const rank = (slug: string) => { const i = priority.indexOf(slug); return i < 0 ? 99 : i }
+  return rank(a.slug) - rank(b.slug) || a.name.localeCompare(b.name)
 })
 ---
 <nav class="category-nav" aria-label="Browse by category">
   <a href={url('/archive/')} aria-current={!selected && Astro.url.pathname.includes('/archive') ? 'page' : undefined} class:list={{ selected: !selected }}>All</a>
-  {categories.map(category => <a href={getCategoryUrl(category.name)} aria-current={selected.toLowerCase() === category.name.toLowerCase() ? 'page' : undefined}>{category.name.charAt(0).toUpperCase() + category.name.slice(1)}</a>)}
+  {categories.map(category => <a href={getCategoryUrl(category.slug)} aria-current={selectedSlug === category.slug ? 'page' : undefined}>{category.name}</a>)}
 </nav>

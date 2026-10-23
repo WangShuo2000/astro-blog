@@ -1,6 +1,7 @@
-import { getCollection, type CollectionEntry } from 'astro:content'
-import I18nKey from '@i18n/i18nKey'
-import { i18n } from '@i18n/translation'
+import { type CollectionEntry, getCollection } from 'astro:content'
+import { type Category, collectCategories } from './category-utils'
+
+export type { Category } from './category-utils'
 
 export async function getSortedPosts(): Promise<CollectionEntry<'posts'>[]> {
   const allBlogPosts = await getCollection('posts', ({ data }) => {
@@ -48,34 +49,9 @@ export async function getTagList(): Promise<Tag[]> {
   return keys.map(key => ({ name: key, count: countMap[key] }))
 }
 
-export type Category = {
-  name: string
-  count: number
-}
-
 export async function getCategoryList(): Promise<Category[]> {
   const allBlogPosts = await getCollection<'posts'>('posts', ({ data }) => {
     return import.meta.env.PROD ? data.draft !== true : true
   })
-  const count: { [key: string]: number } = {}
-  allBlogPosts.map((post: { data: { category: string | number } }) => {
-    if (!post.data.category) {
-      const ucKey = i18n(I18nKey.uncategorized)
-      count[ucKey] = count[ucKey] ? count[ucKey] + 1 : 1
-      return
-    }
-    count[post.data.category] = count[post.data.category]
-      ? count[post.data.category] + 1
-      : 1
-  })
-
-  const lst = Object.keys(count).sort((a, b) => {
-    return a.toLowerCase().localeCompare(b.toLowerCase())
-  })
-
-  const ret: Category[] = []
-  for (const c of lst) {
-    ret.push({ name: c, count: count[c] })
-  }
-  return ret
+  return collectCategories(allBlogPosts.map(post => post.data.category))
 }

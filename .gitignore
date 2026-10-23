@@ -6,6 +6,7 @@ dist/
 
 # dependencies
 node_modules/
+.local-runtime/
 
 # logs
 npm-debug.log*

@@ -1,30 +1,27 @@
 import { siteConfig } from '@/config'
 import rss from '@astrojs/rss'
 import { getSortedPosts } from '@utils/content-utils'
+import { normalizeLanguageTag } from '@utils/language-utils'
+import { createRssSummaryItem, escapeRssHtml } from '@utils/rss-utils'
+import { getPostUrlBySlug } from '@utils/url-utils'
 import type { APIContext } from 'astro'
-import MarkdownIt from 'markdown-it'
-import sanitizeHtml from 'sanitize-html'
-
-const parser = new MarkdownIt()
 
 export async function GET(context: APIContext) {
   const blog = await getSortedPosts()
+  const site = context.site ?? 'https://trouvaille-blog.com'
 
   return rss({
     title: siteConfig.title,
     description: siteConfig.subtitle || 'No description',
-    site: context.site ?? 'https://trouvaille-blog.com',
-    items: blog.map(post => {
-      return {
-        title: post.data.title,
-        pubDate: post.data.published,
-        description: post.data.description || '',
-        link: `/posts/${post.id}/`,
-        content: sanitizeHtml(parser.render(post.body || ''), {
-          allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img']),
-        }),
-      }
-    }),
-    customData: `<language>${siteConfig.lang}</language>`,
+    site,
+    items: blog.map(post =>
+      createRssSummaryItem(
+        post,
+        getPostUrlBySlug(post.id),
+        site,
+        siteConfig.lang,
+      ),
+    ),
+    customData: `<language>${escapeRssHtml(normalizeLanguageTag(siteConfig.lang))}</language>`,
   })
 }

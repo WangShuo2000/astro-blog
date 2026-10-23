@@ -5,6 +5,7 @@ description: 'create my vue3 cli'
 tags: ['Vue3', 'Cli', '封装组件']
 category: Technology
 draft: false
+lang: zh-CN
 ---
 
 ## 背景

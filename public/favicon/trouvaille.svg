@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Trouvaille</title>
+  <style>@media (prefers-color-scheme: dark) { .bookmark { fill: #eae7dd; } .monogram { fill: #252724; } }</style>
+  <path class="bookmark" fill="#535e44" d="M12 2H52A6 6 0 0 1 58 8V62L32 54L6 62V8A6 6 0 0 1 12 2Z"/>
+  <path class="monogram" fill="#f6f3ed" d="M14 13H50L51 25H48L45 17H36V41C36 44 38 45 43 45V48H21V45C26 45 28 44 28 41V17H19L16 25H13Z"/>
+</svg>

@@ -58,8 +58,9 @@
         },
         {
           "title": "language",
-          "name": "language",
-          "type": "string"
+          "name": "lang",
+          "type": "string",
+          "default": "zh-CN"
         }
       ]
     }

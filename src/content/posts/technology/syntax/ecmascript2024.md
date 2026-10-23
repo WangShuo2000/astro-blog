@@ -5,6 +5,7 @@ description: "An introduction to ECMAScript2024"
 tags: ['ECMAScript']
 category: Technology
 draft: false
+lang: zh-CN
 ---
 
 ## 介绍

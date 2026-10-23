@@ -2,6 +2,8 @@
 
 import fs from "fs"
 import path from "path"
+import { parseArgs } from "node:util"
+import { normalizeLanguageTag } from "../src/utils/language-utils.ts"
 
 function getDate() {
   const today = new Date()
@@ -12,11 +14,24 @@ function getDate() {
   return `${year}-${month}-${day}`
 }
 
-const args = process.argv.slice(2)
+const usage = "Usage: pnpm new-post <filename> [--lang zh-CN|en|other-language-tag]"
+let args
+let language
 
-if (args.length === 0) {
-  console.error(`Error: No filename argument provided
-Usage: npm run new-post -- <filename>`)
+try {
+  const { positionals, values } = parseArgs({
+    allowPositionals: true,
+    options: { lang: { type: "string", default: "zh-CN" } },
+  })
+  args = positionals
+  language = normalizeLanguageTag(values.lang)
+} catch (error) {
+  console.error(`Error: ${error.message}\n${usage}`)
+  process.exit(1)
+}
+
+if (args.length !== 1) {
+  console.error(`Error: Provide exactly one filename\n${usage}`)
   process.exit(1) // Terminate the script and return error code 1
 }
 
@@ -44,7 +59,7 @@ image: ''
 tags: []
 category: ''
 draft: false 
-lang: ''
+lang: '${language}'
 ---
 `
 
