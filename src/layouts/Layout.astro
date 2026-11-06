@@ -3,13 +3,14 @@ import { Font } from 'astro:assets'
 import GlobalStyles from '@components/GlobalStyles.astro'
 import { profileConfig, siteConfig } from '@/config'
 import { defaultFavicons } from '../constants/icon'
+import { katexStylesheet } from '../integrations/katex-assets.mjs'
 import { url } from '../utils/url-utils'
 import { normalizeLanguageTag } from '../utils/language-utils'
 import { getSocialImage, type SocialImage } from '../utils/social-image'
 import '../base.css'
 import '../editorial.css'
-interface Props { title?: string; banner?: string; description?: string; lang?: string; setOGTypeArticle?: boolean; socialImage?: SocialImage }
-const { title, description, lang, setOGTypeArticle } = Astro.props
+interface Props { title?: string; banner?: string; description?: string; lang?: string; setOGTypeArticle?: boolean; socialImage?: SocialImage; hasMath?: boolean }
+const { title, description, lang, setOGTypeArticle, hasMath = false } = Astro.props
 const pageTitle = title ? `${title} — ${siteConfig.title}` : `${siteConfig.title} — ${siteConfig.subtitle}`
 const pageDescription = description?.trim() || 'Notes on code, life & everything between. A personal journal by Jack Wang.'
 const pageLanguage = normalizeLanguageTag(lang || siteConfig.lang)
@@ -46,7 +47,7 @@ const favicons = siteConfig.favicon.length ? siteConfig.favicon : defaultFavicon
     {favicons.map(icon => <link rel={icon.rel || 'icon'} href={icon.src.startsWith('/') ? url(icon.src) : icon.src} type={icon.type} sizes={icon.sizes} media={icon.theme && `(prefers-color-scheme: ${icon.theme})`} />)}
     <link rel="sitemap" href={url('/sitemap-index.xml')} />
     <link rel="alternate" type="application/rss+xml" title={siteConfig.title} href={url('/rss.xml')} />
-    <link rel="stylesheet" href="https://cdn.staticfile.net/KaTeX/0.16.9/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous" />
+    {hasMath && <link rel="stylesheet" href={url(katexStylesheet)} />}
     <script is:inline>
       try {
         const saved = localStorage.getItem('theme');

@@ -8,9 +8,9 @@ import { profileConfig } from '../config'
 import portrait from '../assets/images/avatar.jpg'
 const aboutPost = await getEntry('spec', 'about')
 if (!aboutPost) throw new Error('Missing about page content')
-const { Content } = await render(aboutPost)
+const { Content, remarkPluginFrontmatter } = await render(aboutPost)
 ---
-<MainGridLayout title="About" description={profileConfig.bio}>
+<MainGridLayout title="About" description={profileConfig.bio} hasMath={remarkPluginFrontmatter.hasMath === true}>
   <header class="page-heading"><p class="eyebrow">BEHIND THE JOURNAL</p><h1>A little about <em class="about-title-second">the person behind it.</em></h1></header>
   <div class="about-layout"><aside class="about-profile"><Image src={portrait} alt={`${profileConfig.name}'s profile artwork`} width={480} sizes="(max-width: 480px) 100px, (max-width: 768px) 200px, 280px" /><h2>{profileConfig.name}</h2><p>{profileConfig.bio}</p><nav aria-label="Social profiles">{profileConfig.links.map(link => <a href={link.url} target="_blank" rel="noopener noreferrer">{link.name}<Icon name="fa6-solid:arrow-up-right-from-square" /></a>)}</nav></aside><div class="about-content"><p class="eyebrow">A PERSONAL SPACE ON THE WEB</p><p class="about-lede">Notes on the things I build,<br />the places I go, and what I find along the way.</p><Markdown class="about-markdown"><Content /></Markdown></div></div>
 </MainGridLayout>

@@ -98,6 +98,32 @@ for (const [relative, page] of index) {
     if (tagName === 'img')
       assert.ok('alt' in attribs, `Missing image alternative: ${relative}`)
   }
+  const hasMath = page.elements.some(({ attribs }) =>
+    attribs.class
+      ?.split(/\s+/)
+      .some(name => name === 'katex' || name === 'katex-error'),
+  )
+  const mathStyles = page.elements.filter(
+    ({ tagName, attribs }) =>
+      tagName === 'link' &&
+      attribs.rel === 'stylesheet' &&
+      /katex/i.test(attribs.href || ''),
+  )
+  assert.equal(
+    mathStyles.length,
+    Number(hasMath),
+    `KaTeX must load only on formula pages: ${relative}`,
+  )
+  for (const { attribs } of mathStyles) {
+    assert.ok(
+      attribs.href.startsWith('/'),
+      `KaTeX styles must be local: ${relative}`,
+    )
+    assert.ok(
+      !attribs.href.startsWith('//'),
+      `KaTeX styles must not use an external host: ${relative}`,
+    )
+  }
   assert.ok(
     page.ids.has('main-content'),
     `Missing skip-link target: ${relative}`,

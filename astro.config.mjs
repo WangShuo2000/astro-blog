@@ -13,10 +13,12 @@ import remarkDirective from 'remark-directive' /* Handle directives */
 import remarkGithubAdmonitionsToDirectives from 'remark-github-admonitions-to-directives'
 import remarkMath from 'remark-math'
 import { codeFont } from './src/font-config.mjs'
+import katexAssets from './src/integrations/katex-assets.mjs'
 import { AdmonitionComponent } from './src/plugins/rehype-component-admonition.mjs'
 import { GithubCardComponent } from './src/plugins/rehype-component-github-card.mjs'
 import { parseDirectiveNode } from './src/plugins/remark-directive-rehype.js'
 import { remarkExcerpt } from './src/plugins/remark-excerpt.js'
+import { remarkMathMetadata } from './src/plugins/remark-math-metadata.mjs'
 import { remarkReadingTime } from './src/plugins/remark-reading-time.mjs'
 
 const oklchToHex = str => {
@@ -43,6 +45,7 @@ export default defineConfig({
   },
   prefetch: { defaultStrategy: 'hover', prefetchAll: false },
   integrations: [
+    katexAssets(),
     icon({
       include: {
         'material-symbols': ['*'],
@@ -65,6 +68,7 @@ export default defineConfig({
     processor: unified({
       remarkPlugins: [
         remarkMath,
+        remarkMathMetadata,
         remarkReadingTime,
         remarkExcerpt,
         remarkGithubAdmonitionsToDirectives,

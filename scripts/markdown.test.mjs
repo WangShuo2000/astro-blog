@@ -22,6 +22,30 @@ test('inline and display math render through KaTeX', async () => {
   )
   assert.match(result.code, /class="katex"/)
   assert.match(result.code, /katex-display/)
+  assert.equal(result.metadata.frontmatter.hasMath, true)
+})
+
+test('math fences render as formulas and request the local math stylesheet', async () => {
+  const result = await markdown.render('```math\nx^2 + y^2 = z^2\n```')
+  assert.match(result.code, /class="katex"/)
+  assert.match(result.code, /katex-display/)
+  assert.equal(result.metadata.frontmatter.hasMath, true)
+})
+
+test('math metadata distinguishes formulas from plain text and code samples', async () => {
+  for (const source of ['Inline $x^2$ formula.', '$$\nE = mc^2\n$$']) {
+    const result = await markdown.render(source)
+    assert.equal(result.metadata.frontmatter.hasMath, true)
+  }
+  for (const source of [
+    'An ordinary paragraph.',
+    '`$x^2$`',
+    '```tex\n$x^2$\n```',
+    'Escaped \\$x^2\\$',
+  ]) {
+    const result = await markdown.render(source)
+    assert.equal(result.metadata.frontmatter.hasMath, false)
+  }
 })
 
 test('all five directive admonitions retain their rendered components', async () => {

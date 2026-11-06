@@ -17,6 +17,12 @@ The GitHub Actions validation workflow installs these same versions and runs `ch
 
 Content collections are configured in `src/content.config.ts`. Articles remain in `src/content/posts/`, and the about content remains in `src/content/spec/about.md`. The unified Markdown processor is explicitly retained for the existing directives, math, and metadata plugins. Code fonts are provided locally through Astro’s Fonts API; site typography continues to use the approved system serif stack.
 
+## Local math styles
+
+KaTeX formulas are rendered at build time. Markdown and MDX pages load math CSS only when their content contains an inline or display formula; other pages do not request it. The local KaTeX integration resolves assets from `rehype-katex`'s own dependency, keeping the renderer, CSS, and fonts on the same version.
+
+Development serves these assets locally, and production builds write the stylesheet, 20 WOFF2 fonts, and license to `dist/katex/<version>/`. WOFF and TTF fallbacks are omitted for modern browsers. This adds roughly 283 KB of shared CSS/font files to the deployment, not per page; browsers fetch only the fonts a formula uses. No browser-side KaTeX renderer or external math CDN is needed. Wide display formulas scroll within their own block on narrow screens.
+
 ## ⚙️ Frontmatter of Posts
 
 ```yaml
